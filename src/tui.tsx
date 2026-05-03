@@ -74,7 +74,6 @@ const tui: TuiPlugin = async (api, _options, meta) => {
       await api.kv.set(POKE_KV_KEY, JSON.stringify(batch))
     } catch {}
     try {
-      // @ts-expect-error — client shape is runtime-dependent
       api.client?.emit?.('poke:flush', { count: batch.length })
     } catch {}
   }
@@ -87,7 +86,8 @@ const tui: TuiPlugin = async (api, _options, meta) => {
     }, THROTTLE_MS)
   }
 
-  const unsubMouse = api.event.on('mouse:click', (evt: MouseClickEvent) => {
+  const unsubMouse = api.event.on('mouse:click', (data: unknown) => {
+    const evt = data as MouseClickEvent
     const now = Date.now()
 
     const size = api.renderer?.size ?? { width: 100, height: 100 }

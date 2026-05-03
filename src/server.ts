@@ -43,34 +43,46 @@ interface TransformOutput {
 export const PokeServerPlugin: Plugin = async (ctx) => {
   const pending: PokeData[] = []
 
+  try {
+    const raw = await ctx.client?.kv?.get?.(POKE_KV_KEY)
+    if (typeof raw === 'string') {
+      const lines: string[] = JSON.parse(raw)
+      for (const line of lines) {
+        const parsed = parsePoke(line)
+        if (parsed) pending.push(parsed)
+      }
+    }
+  } catch {}
+
   return {
-    event: async ({ event }) => {
-      if (event.type === 'poke:flush') {
-        try {
-          // @ts-expect-error — client API is runtime-dependent
-          const raw = await ctx.client?.kv?.get?.(POKE_KV_KEY)
-          if (typeof raw === 'string') {
-            const lines: string[] = JSON.parse(raw)
-            for (const line of lines) {
-              const parsed = parsePoke(line)
-              if (parsed) pending.push(parsed)
-            }
-          }
-        } catch {}
+    'chat.message': async (
+      _input: { sessionID: string; agent?: string; model?: { providerID: string; modelID: string }; messageID?: string; variant?: string },
+      output: { message: { content?: string }; parts: Array<{ type: string; text?: string }> }
+    ) => {
+      const content = output.parts.filter((p) => p.type === 'text').map((p) => p.text || '').join('')
+
+      if (content.trim() === '@poke') {
+        output.parts.push({
+          type: 'text',
+          text: 'Usage: @poke x,y — e.g., @poke 100,200',
+        })
         return
       }
 
-      if (event.type === 'chat.message') {
-        const msg = (event.data as { message?: { content?: string } })?.message
-        const content = msg?.content ?? ''
-        const match = content.match(/^@poke\s+(\d+),(\d+)\s*(.*)/)
-        if (match) {
-          pending.push({
-            timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            coords: { x: parseInt(match[1], 10), y: parseInt(match[2], 10) },
-            sessionId: match[3] || 'manual',
-          })
-        }
+      const match = content.match(/^@poke\s+(\d+),(\d+)\s*(.*)/)
+      if (match) {
+        const x = parseInt(match[1], 10)
+        const y = parseInt(match[2], 10)
+        const sessionId = match[3] || 'manual'
+        pending.push({
+          timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+          coords: { x, y },
+          sessionId,
+        })
+        output.parts.push({
+          type: 'text',
+          text: `Poke recorded at (${x}, ${y})`,
+        })
       }
     },
 

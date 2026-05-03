@@ -10,7 +10,7 @@
       "types": "./dist/server.d.ts"
     },
     "./tui": {
-      "import": "./dist/tui.js",
+      "import": "./dist/tui.jsx",
       "types": "./dist/tui.d.ts"
     }
   },
