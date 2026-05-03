@@ -1,0 +1,59 @@
+{
+  "name": "opencode-poke-plugin",
+  "version": "1.0.0",
+  "description": "OpenCode plugin that injects POKE stimuli into LLM context on mouse clicks with visual ripple feedback",
+  "type": "module",
+  "main": "./dist/server.js",
+  "exports": {
+    "./server": {
+      "import": "./dist/server.js",
+      "types": "./dist/server.d.ts"
+    },
+    "./tui": {
+      "import": "./dist/tui.js",
+      "types": "./dist/tui.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "poke",
+    "stimulus",
+    "llm",
+    "context-injection",
+    "mouse",
+    "ripple"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "opencode": ">=1.0.0"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0",
+    "@opentui/core": ">=1.0.0",
+    "@opentui/solid": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@opentui/core": {
+      "optional": true
+    },
+    "@opentui/solid": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
