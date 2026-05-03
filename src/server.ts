@@ -28,11 +28,15 @@ function buildPokePart(pokes: PokeData[]): string {
 interface MessagePart {
   type: string
   text?: string
+  id?: string
+  messageID?: string
+  sessionID?: string
+  synthetic?: boolean
   [k: string]: unknown
 }
 
 interface MessageWithParts {
-  info: { role?: string; [k: string]: unknown }
+  info: { role?: string; id?: string; sessionID?: string; [k: string]: unknown }
   parts: MessagePart[]
 }
 
@@ -61,14 +65,6 @@ export const PokeServerPlugin: Plugin = async (ctx) => {
     ) => {
       const content = output.parts.filter((p) => p.type === 'text').map((p) => p.text || '').join('')
 
-      if (content.trim() === '@poke') {
-        output.parts.push({
-          type: 'text',
-          text: 'Usage: @poke x,y — e.g., @poke 100,200',
-        })
-        return
-      }
-
       const match = content.match(/^@poke\s+(\d+),(\d+)\s*(.*)/)
       if (match) {
         const x = parseInt(match[1], 10)
@@ -78,10 +74,6 @@ export const PokeServerPlugin: Plugin = async (ctx) => {
           timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
           coords: { x, y },
           sessionId,
-        })
-        output.parts.push({
-          type: 'text',
-          text: `Poke recorded at (${x}, ${y})`,
         })
       }
     },
@@ -118,16 +110,32 @@ export const PokeServerPlugin: Plugin = async (ctx) => {
         }
       }
 
-      const targetIndex = output.messages.findLastIndex((m) => m.info.role === 'user')
-      const insertIdx = targetIndex >= 0 ? targetIndex : output.messages.length - 1
-      const targetMsg = output.messages[insertIdx]
+      let lastUserMessageIndex = -1
+      for (let i = output.messages.length - 1; i >= 0; i--) {
+        if (output.messages[i].info.role === 'user') {
+          lastUserMessageIndex = i
+          break
+        }
+      }
+      if (lastUserMessageIndex === -1) return
 
-      const pokePart: MessagePart = {
+      const lastUserMessage = output.messages[lastUserMessageIndex]
+      const textPartIndex = lastUserMessage.parts.findIndex((p) => p.type === 'text' && p.text)
+      if (textPartIndex === -1) return
+
+      const sessionID = lastUserMessage.info.sessionID ?? ''
+      const messageID = lastUserMessage.info.id ?? ''
+
+      const syntheticPart: MessagePart = {
+        id: `poke_synthetic_${sessionID || 'unknown'}`,
+        messageID,
+        sessionID,
         type: 'text',
         text: buildPokePart(pokesToInject),
+        synthetic: true,
       }
 
-      targetMsg.parts.push(pokePart)
+      lastUserMessage.parts.splice(textPartIndex, 0, syntheticPart)
     },
   }
 }
