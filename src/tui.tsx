@@ -5,8 +5,6 @@
  */
 
 /** @jsxImportSource @opentui/solid */
-import type { TuiPlugin, TuiPluginModule } from '@opencode-ai/plugin/tui'
-import { createSignal } from '@opentui/solid'
 import {
   uuidv4,
   nowISO,
@@ -18,6 +16,13 @@ import {
   type MouseClickEvent,
   type PokeData,
 } from './types.js'
+
+import { createSignal } from 'solid-js'
+
+// The host package re-exports TUI types from its internal `tui` subpath.
+// Import them from the public package root so build-time resolution works
+// without depending on a subpath that is not in the published exports map.
+import type { TuiPlugin, TuiPluginModule, TuiPluginApi, TuiPluginMeta } from '@opencode-ai/plugin'
 
 const RIPPLE_MS = 200
 const RIPPLE_COLOR = '#00ff88'
@@ -34,7 +39,7 @@ interface Ripple {
 
 let rippleId = 0
 
-const tui: TuiPlugin = async (api, _options, meta) => {
+const tui: TuiPlugin = async (api: TuiPluginApi, _options: unknown, meta: TuiPluginMeta) => {
   let sessionId = await api.kv.get(SESSION_KV_KEY).catch(() => null)
   if (typeof sessionId !== 'string' || meta.state === 'first') {
     sessionId = uuidv4()
@@ -74,7 +79,7 @@ const tui: TuiPlugin = async (api, _options, meta) => {
       await api.kv.set(POKE_KV_KEY, JSON.stringify(batch))
     } catch {}
     try {
-      api.client?.emit?.('poke:flush', { count: batch.length })
+      api.client?.experimental?.emit?.('poke:flush', { count: batch.length })
     } catch {}
   }
 
@@ -129,7 +134,6 @@ const tui: TuiPlugin = async (api, _options, meta) => {
 
           return (
             <box
-              key={r.id}
               style={{
                 position: 'absolute',
                 left: Math.max(0, r.x - radius),
@@ -138,7 +142,12 @@ const tui: TuiPlugin = async (api, _options, meta) => {
                 height: radius * 2 + 1,
               }}
             >
-              <text style={{ color: RIPPLE_COLOR, opacity }}>
+              <text
+                style={{
+                  fg: RIPPLE_COLOR,
+                  opacity,
+                }}
+              >
                 {'█'.repeat(Math.max(1, radius * 2 + 1))}
               </text>
             </box>

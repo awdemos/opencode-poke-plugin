@@ -42,8 +42,8 @@
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.0.0",
-    "@opentui/core": ">=1.0.0",
-    "@opentui/solid": ">=1.0.0"
+    "@opentui/core": "0.2.2",
+    "@opentui/solid": "0.2.2"
   },
   "peerDependenciesMeta": {
     "@opentui/core": {
@@ -54,6 +54,8 @@
     }
   },
   "devDependencies": {
+    "@opentui/core": "^0.2.2",
+    "@opentui/solid": "^0.2.2",
     "typescript": "^5.4.0"
   }
 }
